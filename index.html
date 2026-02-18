@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Текущий контроль — Открытая разработка</title>
+<title>Текущий контроль — Открытая разработка месторождений</title>
 
 <style>
 body{
-font-family:Arial;
+font-family: Arial;
 background:#0f172a;
 color:white;
 margin:0;
@@ -15,7 +15,7 @@ padding:20px;
 }
 
 .container{
-max-width:700px;
+max-width:800px;
 margin:auto;
 }
 
@@ -28,13 +28,14 @@ margin-bottom:15px;
 
 button{
 width:100%;
-padding:15px;
-margin:5px 0;
+padding:12px;
+margin:6px 0;
 border:none;
 border-radius:8px;
 background:#2563eb;
 color:white;
 font-size:16px;
+cursor:pointer;
 }
 
 button:hover{
@@ -46,6 +47,7 @@ background:#334155;
 padding:10px;
 border-radius:8px;
 margin-bottom:10px;
+font-weight:bold;
 }
 </style>
 
@@ -58,8 +60,10 @@ margin-bottom:10px;
 <h2>Текущий контроль</h2>
 <p>Открытая разработка месторождений</p>
 
-<input id="name" placeholder="Введите ФИО" style="width:100%;padding:10px;border-radius:6px;border:none;margin-top:10px;">
-<button onclick="start()">Начать тест</button>
+<input id="name" placeholder="Введите ФИО"
+style="width:100%;padding:10px;border-radius:6px;border:none;margin-top:10px;">
+
+<button onclick="startTest()">Начать тест</button>
 
 </div>
 
@@ -71,177 +75,205 @@ margin-bottom:10px;
 
 let student="";
 let score=0;
-let questionIndex=0;
+let index=0;
 let questions=[];
 
 function rand(min,max){
 return Math.floor(Math.random()*(max-min+1))+min;
 }
 
-function generateQuestions(){
+function generateQuestionBank(){
 
-let pool=[
+return [
 
-// крепость
-()=>{
+function(){
 let f=rand(1,20);
-return {
-q:`Коэффициент крепости f = ${f}. Какая порода?`,
+let correct;
+
+if(f<=4) correct=0;
+else if(f<=10) correct=1;
+else if(f<=16) correct=2;
+else correct=3;
+
+return{
+q:`Коэффициент крепости пород f = ${f}. Определите категорию пород и необходимость буровзрывной подготовки.`,
 a:[
-"Мягкая",
-"Средняя",
-"Крепкая",
-"Очень крепкая"
+"Мягкие породы, буровзрывные работы не требуются",
+"Породы средней крепости, возможна частичная буровзрывная подготовка",
+"Крепкие породы, требуется буровзрывная подготовка",
+"Очень крепкие породы, обязательны интенсивные буровзрывные работы"
 ],
-correct: f<=4?0 : f<=10?1 : f<=16?2 : 3
+correct:correct
 };
 },
 
-// угол
-()=>{
-let angle=rand(0,90);
-return {
-q:`Угол падения ${angle}°. Тип залежи?`,
+function(){
+let k=rand(2,12);
+
+return{
+q:`Коэффициент вскрыши составляет ${k} м³/м³. Как это влияет на экономическую эффективность разработки?`,
+a:[
+"Эффективность повышается",
+"Эффективность не изменяется",
+"Эффективность снижается",
+"Эффективность зависит только от транспорта"
+],
+correct: k>6 ? 2 : 0
+};
+},
+
+function(){
+let angle=rand(1,80);
+
+let correct;
+
+if(angle<=5) correct=0;
+else if(angle<=25) correct=1;
+else if(angle<=55) correct=2;
+else correct=3;
+
+return{
+q:`Угол падения залежи составляет ${angle}°. Определите тип залежи.`,
 a:[
 "Горизонтальная",
 "Пологая",
 "Наклонная",
 "Крутая"
 ],
-correct: angle<=5?0 : angle<=25?1 : angle<=55?2 : 3
+correct:correct
 };
 },
 
-// вскрыша
-()=>{
-let k=rand(1,12);
+function(){
 return{
-q:`Коэффициент вскрыши = ${k}. Оцените условия.`,
+q:`Строительство капитальных траншей и создание доступа к залежи относится к какому этапу разработки месторождения?`,
 a:[
-"Очень благоприятные",
-"Благоприятные",
-"Сложные",
-"Очень сложные"
+"Подготовительный этап",
+"Этап вскрытия месторождения",
+"Этап добычи",
+"Этап рекультивации"
 ],
-correct: k<=3?0 : k<=6?1 : k<=9?2 :3
+correct:1
 };
 },
 
-// кондиции
-()=>{
-let types=["геологические","эксплуатационные","проектные"];
-let t=types[rand(0,2)];
+function(){
 return{
-q:`Определение параметров качества полезного ископаемого — это кондиции:`,
+q:`Удаление пустых пород, покрывающих полезное ископаемое, относится к:`,
 a:[
-"Геологические",
-"Эксплуатационные",
-"Проектные",
-"Экономические"
+"Добычным работам",
+"Вскрышным работам",
+"Подготовительным работам",
+"Транспортным работам"
 ],
-correct: t=="геологические"?0:t=="эксплуатационные"?1:2
+correct:1
 };
 },
 
-// транспорт
-()=>{
+function(){
+return{
+q:`Выемка полезного ископаемого и погрузка в транспорт относится к:`,
+a:[
+"Вскрышным работам",
+"Добычным работам",
+"Подготовительным работам",
+"Разведочным работам"
+],
+correct:1
+};
+},
+
+function(){
 let d=rand(1,15);
+
+let correct;
+
+if(d<=3) correct=0;
+else if(d<=8) correct=1;
+else correct=2;
+
 return{
-q:`Расстояние транспортирования ${d} км. Лучший транспорт?`,
+q:`Расстояние транспортирования горной массы составляет ${d} км. Какой транспорт наиболее рационален?`,
 a:[
-"Автотранспорт",
-"Конвейер",
-"Железнодорожный",
-"Любой"
+"Автомобильный транспорт",
+"Конвейерный транспорт",
+"Железнодорожный транспорт",
+"Любой транспорт одинаково эффективен"
 ],
-correct: d<=3?0:d<=8?1:2
+correct:correct
 };
 },
 
-// работы
-()=>{
+function(){
 return{
-q:"Удаление пустых пород — это:",
+q:`Какие кондиции определяют качество и количество запасов полезного ископаемого на основе геологических данных?`,
 a:[
-"Вскрышные работы",
-"Добычные работы",
-"Подготовительные",
-"Транспортные"
-],
-correct:0
-};
-},
-
-()=>{
-return{
-q:"Выемка полезного ископаемого — это:",
-a:[
-"Добычные работы",
-"Вскрышные работы",
-"Подготовительные",
-"Транспортные"
+"Геологические кондиции",
+"Эксплуатационные кондиции",
+"Проектные кондиции",
+"Технические кондиции"
 ],
 correct:0
 };
 },
 
-// этапы
-()=>{
+function(){
 return{
-q:"Первый этап разработки:",
+q:`Почему открытый способ разработки обеспечивает более высокую производительность по сравнению с подземным способом?`,
 a:[
+"Из-за отсутствия транспорта",
+"Из-за возможности применения высокопроизводительной техники",
+"Из-за отсутствия вскрышных работ",
+"Из-за меньшей глубины"
+],
+correct:1
+};
+},
+
+function(){
+return{
+q:`Что является основным недостатком открытого способа разработки месторождений?`,
+a:[
+"Высокая производительность",
+"Большой объем вскрышных работ",
+"Высокая механизация",
+"Низкая себестоимость"
+],
+correct:1
+};
+},
+
+function(){
+return{
+q:`Первый этап разработки месторождения называется:`,
+a:[
+"Подготовительный этап",
 "Вскрытие",
 "Добыча",
-"Транспорт",
 "Рекультивация"
 ],
 correct:0
 };
 },
 
-// преимущество
-()=>{
+function(){
 return{
-q:"Преимущество открытого способа:",
+q:`Уступ в карьере — это:`,
 a:[
-"Высокая производительность",
-"Высокая стоимость",
-"Сложность",
-"Глубокое залегание"
+"Вертикальная выработка",
+"Горизонтальная рабочая площадка",
+"Транспортная выработка",
+"Разведочная выработка"
 ],
-correct:0
-};
-},
-
-// недостаток
-()=>{
-return{
-q:"Недостаток открытого способа:",
-a:[
-"Большой объем вскрыши",
-"Высокая производительность",
-"Низкая себестоимость",
-"Безопасность"
-],
-correct:0
+correct:1
 };
 }
 
 ];
 
-// случайно выбираем 10
-let used=[];
-while(questions.length<10){
-let i=rand(0,pool.length-1);
-if(!used.includes(i)){
-questions.push(pool[i]());
-used.push(i);
-}
 }
 
-}
-
-function start(){
+function startTest(){
 
 student=document.getElementById("name").value;
 
@@ -250,34 +282,47 @@ alert("Введите ФИО");
 return;
 }
 
-generateQuestions();
+let bank=generateQuestionBank();
 
-next();
+let used=[];
+
+while(questions.length<10){
+let i=rand(0,bank.length-1);
+if(!used.includes(i)){
+questions.push(bank[i]());
+used.push(i);
+}
+}
+
+showQuestion();
 
 }
 
-function next(){
+function showQuestion(){
 
-if(questionIndex>=questions.length){
+if(index>=questions.length){
 
 document.getElementById("quiz").innerHTML=
 `<div class="card">
 <h2>Тест завершен</h2>
 <p>${student}</p>
-<p>Баллы: ${score}/100</p>
+<p><b>Баллы: ${score}/100</b></p>
 </div>`;
 
 return;
 }
 
-let q=questions[questionIndex];
+let q=questions[index];
 
-let html=`<div class="card">
+let html=
+`<div class="card">
+
 <div class="score">
 Баллы: ${score}/100
 </div>
 
-<h3>Вопрос ${questionIndex+1}</h3>
+<h3>Вопрос ${index+1} из 10</h3>
+
 <p>${q.q}</p>`;
 
 q.a.forEach((ans,i)=>{
@@ -292,16 +337,15 @@ document.getElementById("quiz").innerHTML=html;
 
 function answer(i){
 
-if(i==questions[questionIndex].correct){
+if(i==questions[index].correct){
+
 score+=10;
-}else{
-score-=5;
-if(score<0)score=0;
+
 }
 
-questionIndex++;
+index++;
 
-next();
+showQuestion();
 
 }
 
