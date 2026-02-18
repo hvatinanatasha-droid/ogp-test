@@ -1,347 +1,53 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Текущий контроль — Открытая разработка месторождений</title>
+<title>Текущий контроль ОГП</title>
 <style>
-body{font-family:Arial;background:#0f172a;color:#e5e7eb;margin:0}
-header{background:#1e293b;padding:15px;text-align:center;font-size:20px}
-.container{padding:15px;max-width:900px;margin:auto}
-.card{background:#1e293b;padding:15px;border-radius:10px;margin-bottom:10px}
-button{width:100%;padding:14px;margin:6px 0;border:none;border-radius:8px;background:#2563eb;color:white;font-size:16px}
-button:hover{background:#1d4ed8}
-input{width:100%;padding:12px;border-radius:8px;border:none;margin:5px 0}
-.score{background:#334155;padding:10px;border-radius:8px;margin-bottom:10px}
-.hidden{display:none}
-table{width:100%;border-collapse:collapse;margin-top:10px}
-td,th{border:1px solid #334155;padding:8px}
+body{font-family:Arial;background:#0f172a;color:white;text-align:center;padding:20px}
+button{padding:15px;margin:10px;font-size:18px;background:#2563eb;color:white;border:none;border-radius:8px}
 </style>
 </head>
 <body>
 
-<header>
-Текущий контроль<br>
-Открытая разработка месторождений<br>
-10 вопросов • 100 баллов
-</header>
+<h1>Текущий контроль</h1>
+<p>Открытая разработка месторождений</p>
 
-<div class="container">
-
-<div class="card" id="login">
-<input id="name" placeholder="Введите ФИО">
-<button onclick="startExam()">Начать тест</button>
-<button onclick="showResults()">Журнал результатов</button>
-<button onclick="exportCSV()">Экспорт Excel</button>
-<div id="msg"></div>
-</div>
-
-<div class="card hidden" id="exam"></div>
-<div class="card hidden" id="results"></div>
-
-</div>
+<div id="quiz"></div>
 
 <script>
 
-const variants=[
-{id:1,f:1,angle:5,distance:2,type:"advantage",work:"stripping"},
-{id:2,f:2,angle:10,distance:4,type:"disadvantage",work:"mining"},
-{id:3,f:4,angle:20,distance:6,type:"advantage",work:"mining"},
-{id:4,f:5,angle:28,distance:8,type:"disadvantage",work:"stripping"},
-{id:5,f:8,angle:35,distance:10,type:"advantage",work:"mining"},
-{id:6,f:12,angle:50,distance:15,type:"disadvantage",work:"stripping"},
-{id:7,f:14,angle:48,distance:12,type:"advantage",work:"stripping"},
-{id:8,f:3,angle:15,distance:5,type:"disadvantage",work:"mining"},
-{id:9,f:1.5,angle:8,distance:3,type:"advantage",work:"mining"},
-{id:10,f:18,angle:65,distance:18,type:"disadvantage",work:"stripping"},
-{id:11,f:4.5,angle:22,distance:7,type:"advantage",work:"stripping"},
-{id:12,f:2,angle:9,distance:4,type:"disadvantage",work:"mining"}
-];
-
-let student="";
-let variant=null;
 let score=0;
-let index=0;
-let wrongStreak=0;
-let questions=[];
+let question=0;
 
-function shuffle(arr){
-return arr.sort(()=>Math.random()-0.5);
-}
-
-function startExam(){
-
-student=document.getElementById("name").value.trim();
-
-if(student==""){
-document.getElementById("msg").innerHTML="Введите ФИО";
-return;
-}
-
-let results=JSON.parse(localStorage.getItem("ogp_results")||"[]");
-
-if(results.find(r=>r.name.toLowerCase()==student.toLowerCase())){
-document.getElementById("msg").innerHTML="Вы уже проходили тест";
-return;
-}
-
-variant=variants[Math.floor(Math.random()*variants.length)];
-
-generateQuestions();
-
-document.getElementById("login").classList.add("hidden");
-document.getElementById("exam").classList.remove("hidden");
-
-showQuestion();
-}
-
-function generateQuestions(){
-
-questions=[
-
-// 1
-{
-q:`Коэффициент крепости f=${variant.f}. Тип породы:`,
-options:[
-{t:"Мягкая",correct:variant.f<=2},
-{t:"Полускальная",correct:variant.f>2 && variant.f<=5},
-{t:"Скальная",correct:variant.f>5},
-{t:"Осадочная",correct:false}
-]
-},
-
-// 2
-{
-q:`Угол падения ${variant.angle}°. Тип залежи:`,
-options:[
-{t:"Пологая",correct:variant.angle<=10},
-{t:"Наклонная",correct:variant.angle>10 && variant.angle<=30},
-{t:"Крутая",correct:variant.angle>30},
-{t:"Вертикальная",correct:false}
-]
-},
-
-// 3
-{
-q:`Расстояние ${variant.distance} км. Рациональный транспорт:`,
-options:[
-{t:"Автосамосвал",correct:variant.distance<=5},
-{t:"Железнодорожный",correct:variant.distance>5},
-{t:"Бульдозер",correct:false},
-{t:"Экскаватор",correct:false}
-]
-},
-
-// 4
-variant.type=="advantage"?
-{
-q:"Достоинство открытого способа разработки:",
-options:[
-{t:"Высокая производительность",correct:true},
-{t:"Большой объем вскрыши",correct:false},
-{t:"Зависимость от климата",correct:false},
-{t:"Нарушение поверхности",correct:false}
-]
-}:
-{
-q:"Недостаток открытого способа разработки:",
-options:[
-{t:"Большой объем вскрышных работ",correct:true},
-{t:"Высокая производительность",correct:false},
-{t:"Высокая механизация",correct:false},
-{t:"Безопасность",correct:false}
-]
-},
-
-// 5
-variant.work=="stripping"?
-{
-q:"Удаление пустых пород относится к:",
-options:[
-{t:"Вскрышным работам",correct:true},
-{t:"Добычным работам",correct:false},
-{t:"Транспортным",correct:false},
-{t:"Подготовительным",correct:false}
-]
-}:
-{
-q:"Выемка полезного ископаемого относится к:",
-options:[
-{t:"Добычным работам",correct:true},
-{t:"Вскрышным работам",correct:false},
-{t:"Транспортным",correct:false},
-{t:"Подготовительным",correct:false}
-]
-},
-
-// 6
-{
-q:"Главный показатель экономической эффективности открытой разработки:",
-options:[
-{t:"Коэффициент вскрыши",correct:true},
-{t:"Коэффициент крепости",correct:false},
-{t:"Высота уступа",correct:false},
-{t:"Угол падения",correct:false}
-]
-},
-
-// 7
-{
-q:"Требования к качеству полезного ископаемого при проектировании:",
-options:[
-{t:"Проектные кондиции",correct:true},
-{t:"Геологические кондиции",correct:false},
-{t:"Эксплуатационные кондиции",correct:false},
-{t:"Транспортные",correct:false}
-]
-},
-
-// 8
-{
-q:"Рабочая горизонтальная площадка карьера:",
-options:[
-{t:"Уступ",correct:true},
-{t:"Шахта",correct:false},
-{t:"Штольня",correct:false},
-{t:"Скважина",correct:false}
-]
-},
-
-// 9
-{
-q:"Открытая горная выработка называется:",
-options:[
-{t:"Карьер",correct:true},
-{t:"Шахта",correct:false},
-{t:"Туннель",correct:false},
-{t:"Штольня",correct:false}
-]
-},
-
-// 10
-{
-q:"Последовательность этапов разработки:",
-options:[
-{t:"Вскрышные → добычные",correct:true},
-{t:"Добычные → вскрышные",correct:false},
-{t:"Транспорт → вскрышные",correct:false},
-{t:"Добычные → подготовка",correct:false}
-]
-}
-
+const questions=[
+["Удаление пустых пород называется:",["Вскрышные работы","Добычные работы","Транспорт"],0],
+["Выемка полезного ископаемого:",["Добычные работы","Вскрышные работы","Разведка"],0],
+["Открытая выработка:",["Карьер","Шахта","Штольня"],0],
+["Рабочая площадка карьера:",["Уступ","Скважина","Шахта"],0],
+["Показатель эффективности:",["Коэффициент вскрыши","Глубина","Ширина"],0]
 ];
 
-questions.forEach(q=>shuffle(q.options));
-
-}
-
-function showQuestion(){
-
-if(index>=questions.length){
-finishExam();
+function show(){
+if(question>=questions.length){
+document.body.innerHTML="<h2>Баллы: "+score+"/100</h2>";
 return;
 }
-
-let q=questions[index];
-
-let html=`
-<div class="score">Вариант №${variant.id} | Баллы: ${score}/100</div>
-<h3>Вопрос ${index+1} из 10</h3>
-<p>${q.q}</p>
-`;
-
-q.options.forEach((opt,i)=>{
-html+=`<button onclick="answer(${i})">${opt.t}</button>`;
+let q=questions[question];
+let html="<h2>"+q[0]+"</h2>";
+q[1].forEach((a,i)=>{
+html+="<button onclick='answer("+i+")'>"+a+"</button><br>";
 });
-
-document.getElementById("exam").innerHTML=html;
-
+document.getElementById("quiz").innerHTML=html;
 }
 
 function answer(i){
-
-if(questions[index].options[i].correct){
-score+=10;
-wrongStreak=0;
-}else{
-wrongStreak++;
-if(wrongStreak>=2){
-score-=5;
-wrongStreak=0;
-}
+if(i==questions[question][2]) score+=20;
+question++;
+show();
 }
 
-index++;
-showQuestion();
-
-}
-
-function finishExam(){
-
-let grade=score>=90?"Отлично":
-score>=70?"Хорошо":
-score>=50?"Удовлетворительно":
-"Неудовлетворительно";
-
-let results=JSON.parse(localStorage.getItem("ogp_results")||"[]");
-
-results.push({
-name:student,
-variant:variant.id,
-score:score,
-grade:grade,
-date:new Date().toLocaleString()
-});
-
-localStorage.setItem("ogp_results",JSON.stringify(results));
-
-document.getElementById("exam").innerHTML=`
-<h2>Тест завершен</h2>
-<p>${student}</p>
-<p>Вариант №${variant.id}</p>
-<p>Баллы: ${score}/100</p>
-<p>Оценка: ${grade}</p>
-`;
-
-}
-
-function showResults(){
-
-document.getElementById("results").classList.remove("hidden");
-
-let results=JSON.parse(localStorage.getItem("ogp_results")||"[]");
-
-let html="<h3>Журнал результатов</h3><table><tr><th>ФИО</th><th>Вариант</th><th>Баллы</th><th>Оценка</th><th>Дата</th></tr>";
-
-results.forEach(r=>{
-html+=`<tr><td>${r.name}</td><td>${r.variant}</td><td>${r.score}</td><td>${r.grade}</td><td>${r.date}</td></tr>`;
-});
-
-html+="</table>";
-
-document.getElementById("results").innerHTML=html;
-
-}
-
-function exportCSV(){
-
-let results=JSON.parse(localStorage.getItem("ogp_results")||"[]");
-
-let csv="ФИО,Вариант,Баллы,Оценка,Дата\n";
-
-results.forEach(r=>{
-csv+=`${r.name},${r.variant},${r.score},${r.grade},${r.date}\n`;
-});
-
-let blob=new Blob([csv],{type:"text/csv"});
-
-let a=document.createElement("a");
-a.href=URL.createObjectURL(blob);
-a.download="результаты_ОГП.csv";
-a.click();
-
-}
+show();
 
 </script>
 
