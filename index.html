@@ -2,52 +2,308 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Текущий контроль ОГП</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Текущий контроль — Открытая разработка</title>
+
 <style>
-body{font-family:Arial;background:#0f172a;color:white;text-align:center;padding:20px}
-button{padding:15px;margin:10px;font-size:18px;background:#2563eb;color:white;border:none;border-radius:8px}
+body{
+font-family:Arial;
+background:#0f172a;
+color:white;
+margin:0;
+padding:20px;
+}
+
+.container{
+max-width:700px;
+margin:auto;
+}
+
+.card{
+background:#1e293b;
+padding:20px;
+border-radius:10px;
+margin-bottom:15px;
+}
+
+button{
+width:100%;
+padding:15px;
+margin:5px 0;
+border:none;
+border-radius:8px;
+background:#2563eb;
+color:white;
+font-size:16px;
+}
+
+button:hover{
+background:#1d4ed8;
+}
+
+.score{
+background:#334155;
+padding:10px;
+border-radius:8px;
+margin-bottom:10px;
+}
 </style>
+
 </head>
 <body>
 
-<h1>Текущий контроль</h1>
+<div class="container">
+
+<div class="card">
+<h2>Текущий контроль</h2>
 <p>Открытая разработка месторождений</p>
+
+<input id="name" placeholder="Введите ФИО" style="width:100%;padding:10px;border-radius:6px;border:none;margin-top:10px;">
+<button onclick="start()">Начать тест</button>
+
+</div>
 
 <div id="quiz"></div>
 
+</div>
+
 <script>
 
+let student="";
 let score=0;
-let question=0;
+let questionIndex=0;
+let questions=[];
 
-const questions=[
-["Удаление пустых пород называется:",["Вскрышные работы","Добычные работы","Транспорт"],0],
-["Выемка полезного ископаемого:",["Добычные работы","Вскрышные работы","Разведка"],0],
-["Открытая выработка:",["Карьер","Шахта","Штольня"],0],
-["Рабочая площадка карьера:",["Уступ","Скважина","Шахта"],0],
-["Показатель эффективности:",["Коэффициент вскрыши","Глубина","Ширина"],0]
+function rand(min,max){
+return Math.floor(Math.random()*(max-min+1))+min;
+}
+
+function generateQuestions(){
+
+let pool=[
+
+// крепость
+()=>{
+let f=rand(1,20);
+return {
+q:`Коэффициент крепости f = ${f}. Какая порода?`,
+a:[
+"Мягкая",
+"Средняя",
+"Крепкая",
+"Очень крепкая"
+],
+correct: f<=4?0 : f<=10?1 : f<=16?2 : 3
+};
+},
+
+// угол
+()=>{
+let angle=rand(0,90);
+return {
+q:`Угол падения ${angle}°. Тип залежи?`,
+a:[
+"Горизонтальная",
+"Пологая",
+"Наклонная",
+"Крутая"
+],
+correct: angle<=5?0 : angle<=25?1 : angle<=55?2 : 3
+};
+},
+
+// вскрыша
+()=>{
+let k=rand(1,12);
+return{
+q:`Коэффициент вскрыши = ${k}. Оцените условия.`,
+a:[
+"Очень благоприятные",
+"Благоприятные",
+"Сложные",
+"Очень сложные"
+],
+correct: k<=3?0 : k<=6?1 : k<=9?2 :3
+};
+},
+
+// кондиции
+()=>{
+let types=["геологические","эксплуатационные","проектные"];
+let t=types[rand(0,2)];
+return{
+q:`Определение параметров качества полезного ископаемого — это кондиции:`,
+a:[
+"Геологические",
+"Эксплуатационные",
+"Проектные",
+"Экономические"
+],
+correct: t=="геологические"?0:t=="эксплуатационные"?1:2
+};
+},
+
+// транспорт
+()=>{
+let d=rand(1,15);
+return{
+q:`Расстояние транспортирования ${d} км. Лучший транспорт?`,
+a:[
+"Автотранспорт",
+"Конвейер",
+"Железнодорожный",
+"Любой"
+],
+correct: d<=3?0:d<=8?1:2
+};
+},
+
+// работы
+()=>{
+return{
+q:"Удаление пустых пород — это:",
+a:[
+"Вскрышные работы",
+"Добычные работы",
+"Подготовительные",
+"Транспортные"
+],
+correct:0
+};
+},
+
+()=>{
+return{
+q:"Выемка полезного ископаемого — это:",
+a:[
+"Добычные работы",
+"Вскрышные работы",
+"Подготовительные",
+"Транспортные"
+],
+correct:0
+};
+},
+
+// этапы
+()=>{
+return{
+q:"Первый этап разработки:",
+a:[
+"Вскрытие",
+"Добыча",
+"Транспорт",
+"Рекультивация"
+],
+correct:0
+};
+},
+
+// преимущество
+()=>{
+return{
+q:"Преимущество открытого способа:",
+a:[
+"Высокая производительность",
+"Высокая стоимость",
+"Сложность",
+"Глубокое залегание"
+],
+correct:0
+};
+},
+
+// недостаток
+()=>{
+return{
+q:"Недостаток открытого способа:",
+a:[
+"Большой объем вскрыши",
+"Высокая производительность",
+"Низкая себестоимость",
+"Безопасность"
+],
+correct:0
+};
+}
+
 ];
 
-function show(){
-if(question>=questions.length){
-document.body.innerHTML="<h2>Баллы: "+score+"/100</h2>";
+// случайно выбираем 10
+let used=[];
+while(questions.length<10){
+let i=rand(0,pool.length-1);
+if(!used.includes(i)){
+questions.push(pool[i]());
+used.push(i);
+}
+}
+
+}
+
+function start(){
+
+student=document.getElementById("name").value;
+
+if(student==""){
+alert("Введите ФИО");
 return;
 }
-let q=questions[question];
-let html="<h2>"+q[0]+"</h2>";
-q[1].forEach((a,i)=>{
-html+="<button onclick='answer("+i+")'>"+a+"</button><br>";
+
+generateQuestions();
+
+next();
+
+}
+
+function next(){
+
+if(questionIndex>=questions.length){
+
+document.getElementById("quiz").innerHTML=
+`<div class="card">
+<h2>Тест завершен</h2>
+<p>${student}</p>
+<p>Баллы: ${score}/100</p>
+</div>`;
+
+return;
+}
+
+let q=questions[questionIndex];
+
+let html=`<div class="card">
+<div class="score">
+Баллы: ${score}/100
+</div>
+
+<h3>Вопрос ${questionIndex+1}</h3>
+<p>${q.q}</p>`;
+
+q.a.forEach((ans,i)=>{
+html+=`<button onclick="answer(${i})">${ans}</button>`;
 });
+
+html+="</div>";
+
 document.getElementById("quiz").innerHTML=html;
+
 }
 
 function answer(i){
-if(i==questions[question][2]) score+=20;
-question++;
-show();
+
+if(i==questions[questionIndex].correct){
+score+=10;
+}else{
+score-=5;
+if(score<0)score=0;
 }
 
-show();
+questionIndex++;
+
+next();
+
+}
 
 </script>
 
