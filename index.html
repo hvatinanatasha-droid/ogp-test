@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Текущий контроль ОГР</title>
+<title>Текущий контроль — Открытая разработка месторождений</title>
 
 <style>
 
@@ -35,6 +35,7 @@ border-radius:8px;
 background:#2563eb;
 color:white;
 font-size:16px;
+cursor:pointer;
 }
 
 button:hover{
@@ -74,6 +75,8 @@ margin-bottom:10px;
 
 <button onclick="showJournal()">Журнал результатов</button>
 
+<button onclick="downloadExcel()">Скачать журнал в Excel</button>
+
 </div>
 
 <div class="card">
@@ -86,141 +89,149 @@ margin-bottom:10px;
 
 <script>
 
-/* ---------- 12 ВАРИАНТОВ ---------- */
+/* ---------- ПЕРЕМЕННЫЕ ---------- */
 
-let variants = {
+let questions=[];
+let index=0;
+let score=0;
+let variant=0;
+let student="";
+let startTime;
 
-1: generateVariant("Уголь",3,8),
-2: generateVariant("Уголь",3,6),
+/* ---------- КЛАССИФИКАЦИЯ ---------- */
 
-3: generateVariant("Железная руда",7,20),
-4: generateVariant("Железная руда",7,70),
+function getStrength(f){
 
-5: generateVariant("Медь",8,65),
-6: generateVariant("Медь",8,25),
+if(f<=2) return "мягкие породы";
+if(f<=5) return "полускальные породы";
+return "скальные породы";
 
-7: generateVariant("Золото",9,0,"сложная"),
-
-8: generateVariant("Бокситы",4,8),
-
-9: generateVariant("Фосфориты",1.5,3),
-
-10: generateVariant("Хром",10,75),
-
-11: generateVariant("Марганец",4,20),
-
-12: generateVariant("Известняк",1.5,4)
-
-};
-
-/* ---------- ГЕНЕРАЦИЯ ВАРИАНТА ---------- */
-
-function generateVariant(name,f,angle,typeOverride){
-
-let type = "";
-
-if(typeOverride){
-type = typeOverride;
 }
-else if(angle<=10) type="пологая";
-else if(angle<=30) type="наклонная";
-else if(angle<=55) type="крутонаклонная";
-else type="крутая";
 
-let strength = "";
+function getDip(angle){
 
-if(f<=2) strength="мягкие";
-else if(f<=5) strength="полускальные";
-else strength="скальные";
+if(angle<=10) return "пологая залежь";
+if(angle<=30) return "наклонная залежь";
+if(angle<=55) return "крутонаклонная залежь";
+return "крутая залежь";
 
-return shuffleAnswersList([
+}
+
+/* ---------- ПЕРЕМЕШИВАНИЕ ---------- */
+
+function shuffle(array){
+
+return [...array].sort(()=>Math.random()-0.5);
+
+}
+
+function shuffleAnswers(q){
+
+let correctAnswer=q.a[q.correct];
+
+let shuffled=shuffle(q.a);
+
+let newCorrect=shuffled.indexOf(correctAnswer);
+
+return {q:q.q,a:shuffled,correct:newCorrect};
+
+}
+
+/* ---------- ГЕНЕРАЦИЯ 10 УНИКАЛЬНЫХ ВОПРОСОВ ---------- */
+
+function generateQuestions(name,f,angle){
+
+let strength=getStrength(f);
+let dip=getDip(angle);
+
+let list=[
 
 {
-q:`${name} имеет коэффициент крепости f = ${f}. Определите тип породы.`,
+q:`${name} имеет коэффициент крепости f = ${f}. Определите группу пород.`,
 a:["мягкие породы","полускальные породы","скальные породы","сыпучие породы"],
-correct: strength=="мягкие"?0:strength=="полускальные"?1:2
+correct: strength=="мягкие породы"?0:strength=="полускальные породы"?1:2
 },
 
 {
 q:`${name} имеет угол падения ${angle}°. Определите тип залежи.`,
 a:["пологая залежь","наклонная залежь","крутонаклонная залежь","крутая залежь"],
-correct: type=="пологая"?0:type=="наклонная"?1:type=="крутонаклонная"?2:3
+correct: dip=="пологая залежь"?0:dip=="наклонная залежь"?1:dip=="крутонаклонная залежь"?2:3
 },
 
 {
-q:`Основным объектом разработки при добыче ${name} является:`,
-a:["залежь полезного ископаемого","вскрышная толща пород","рабочий уступ карьера","транспортная площадка"],
+q:`Основным объектом разработки месторождения ${name} является:`,
+a:["залежь полезного ископаемого","уступ карьера","вскрышные породы","отвал пород"],
 correct:0
 },
 
 {
-q:`Коэффициент вскрыши при разработке ${name} определяется как:`,
+q:`Коэффициент вскрыши определяется как отношение:`,
 a:[
-"отношение объема вскрышных пород к объему полезного ископаемого",
-"отношение объема полезного ископаемого к объему вскрышных пород",
-"отношение глубины карьера к длине карьера",
-"отношение ширины карьера к глубине карьера"
+"объема вскрышных пород к объему полезного ископаемого",
+"объема полезного ископаемого к объему вскрышных пород",
+"глубины карьера к длине карьера",
+"ширины карьера к глубине карьера"
 ],
 correct:0
 },
 
 {
-q:`Подготовительный период разработки месторождения ${name} включает:`,
+q:`Подготовительный период включает:`,
 a:[
 "подготовку месторождения к разработке",
 "выполнение добычных работ",
-"выполнение рекультивации",
-"выполнение ликвидации"
+"ликвидацию карьера",
+"транспортирование пород"
 ],
 correct:0
 },
 
 {
-q:`Эксплуатационный период разработки ${name} включает:`,
+q:`Эксплуатационный период включает:`,
 a:[
 "вскрышные и добычные работы",
 "подготовительные работы",
 "ликвидационные работы",
-"рекультивационные работы"
+"проектные работы"
 ],
 correct:0
 },
 
 {
-q:`Траншея при разработке ${name} предназначена для:`,
+q:`Траншея предназначена для:`,
 a:[
 "вскрытия месторождения",
+"размещения транспорта",
 "складирования пород",
-"размещения оборудования",
-"размещения транспорта"
+"размещения оборудования"
 ],
 correct:0
 },
 
 {
-q:`Уступ при разработке ${name} представляет собой:`,
+q:`Уступ представляет собой:`,
 a:[
 "ступенчатую часть массива",
-"часть отвала пород",
-"часть транспортной площадки",
-"часть поверхности месторождения"
+"часть отвала",
+"часть поверхности",
+"часть транспорта"
 ],
 correct:0
 },
 
 {
-q:`Транспорт при разработке ${name} предназначен для:`,
+q:`Транспорт используется для:`,
 a:[
 "перемещения горной массы",
-"разрушения горных пород",
-"подготовки уступов",
+"разрушения массива",
+"подготовки уступа",
 "бурения скважин"
 ],
 correct:0
 },
 
 {
-q:`Кондиции при разработке ${name}, устанавливаемые при проектировании, называются:`,
+q:`Кондиции, устанавливаемые при проектировании, называются:`,
 a:[
 "проектные кондиции",
 "геологические кондиции",
@@ -230,38 +241,38 @@ a:[
 correct:0
 }
 
-]);
+];
+
+return list.map(shuffleAnswers);
 
 }
 
-/* ---------- ПЕРЕМЕШИВАНИЕ ---------- */
+/* ---------- 12 ВАРИАНТОВ ---------- */
 
-function shuffle(array){
-return [...array].sort(()=>Math.random()-0.5);
-}
+let variants={
 
-function shuffleAnswersList(list){
-return list.map(q=>shuffleAnswers(q));
-}
+1: generateQuestions("Уголь",3,5),
+2: generateQuestions("Уголь",3,8),
 
-function shuffleAnswers(q){
+3: generateQuestions("Железная руда",7,25),
+4: generateQuestions("Железная руда",7,70),
 
-let correctAnswer = q.a[q.correct];
-let shuffled = shuffle(q.a);
-let newCorrect = shuffled.indexOf(correctAnswer);
+5: generateQuestions("Медь",8,65),
+6: generateQuestions("Медь",8,25),
 
-return {q:q.q,a:shuffled,correct:newCorrect};
+7: generateQuestions("Золото",9,40),
 
-}
+8: generateQuestions("Бокситы",4,10),
 
-/* ---------- ПЕРЕМЕННЫЕ ---------- */
+9: generateQuestions("Фосфориты",1.5,3),
 
-let questions=[];
-let index=0;
-let score=0;
-let variant=0;
-let student="";
-let startTime;
+10: generateQuestions("Хром",10,75),
+
+11: generateQuestions("Марганец",4,20),
+
+12: generateQuestions("Известняк",1.5,4)
+
+};
 
 /* ---------- НАЧАЛО ---------- */
 
@@ -289,13 +300,15 @@ showQuestion();
 
 }
 
-/* ---------- ВОПРОС ---------- */
+/* ---------- ПОКАЗ ---------- */
 
 function showQuestion(){
 
 if(index>=questions.length){
+
 finishTest();
 return;
+
 }
 
 let q=questions[index];
@@ -306,7 +319,9 @@ let html="<div class='card'>"+
 "<p>"+q.q+"</p>";
 
 q.a.forEach((a,i)=>{
+
 html+="<button onclick='answer("+i+")'>"+a+"</button>";
+
 });
 
 html+="</div>";
@@ -334,11 +349,13 @@ function finishTest(){
 let end=new Date();
 
 let result={
+
 name:student,
 variant:variant,
 score:score,
 date:end.toLocaleString(),
 time:Math.round((end-startTime)/1000)
+
 };
 
 saveResult(result);
@@ -373,12 +390,45 @@ let journal=JSON.parse(localStorage.getItem("journal"))||[];
 let html="<div class='card'><h2>Журнал результатов</h2>";
 
 journal.forEach((r,i)=>{
+
 html+="<p>"+(i+1)+". "+r.name+" | вариант "+r.variant+" | "+r.score+" баллов | "+r.date+"</p>";
+
 });
 
 html+="</div>";
 
 document.getElementById("quiz").innerHTML=html;
+
+}
+
+/* ---------- EXCEL ---------- */
+
+function downloadExcel(){
+
+let journal=JSON.parse(localStorage.getItem("journal"))||[];
+
+if(journal.length===0){
+alert("Журнал пуст");
+return;
+}
+
+let csv="ФИО;Вариант;Баллы;Дата;Время (сек)\n";
+
+journal.forEach(r=>{
+
+csv+=`${r.name};${r.variant};${r.score};${r.date};${r.time}\n`;
+
+});
+
+let blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
+
+let link=document.createElement("a");
+
+link.href=URL.createObjectURL(blob);
+
+link.download="Журнал_ОГР.csv";
+
+link.click();
 
 }
 
