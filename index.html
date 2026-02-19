@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Текущий контроль — Открытая разработка месторождений</title>
+<title>Текущий контроль ОГР</title>
 
 <style>
+
 body{
 font-family: Arial;
 background:#0f172a;
 color:white;
-margin:0;
 padding:20px;
 }
 
@@ -35,11 +35,18 @@ border-radius:8px;
 background:#2563eb;
 color:white;
 font-size:16px;
-cursor:pointer;
 }
 
 button:hover{
 background:#1d4ed8;
+}
+
+input{
+width:100%;
+padding:10px;
+border-radius:6px;
+border:none;
+margin-top:10px;
 }
 
 .score{
@@ -47,8 +54,8 @@ background:#334155;
 padding:10px;
 border-radius:8px;
 margin-bottom:10px;
-font-weight:bold;
 }
+
 </style>
 
 </head>
@@ -57,14 +64,20 @@ font-weight:bold;
 <div class="container">
 
 <div class="card">
+
 <h2>Текущий контроль</h2>
 <p>Открытая разработка месторождений</p>
 
-<input id="name" placeholder="Введите ФИО"
-style="width:100%;padding:10px;border-radius:6px;border:none;margin-top:10px;">
+<input id="name" placeholder="Введите ФИО">
 
 <button onclick="startTest()">Начать тест</button>
 
+<button onclick="showJournal()">Журнал результатов</button>
+
+</div>
+
+<div class="card">
+<div id="variant"></div>
 </div>
 
 <div id="quiz"></div>
@@ -73,205 +86,184 @@ style="width:100%;padding:10px;border-radius:6px;border:none;margin-top:10px;">
 
 <script>
 
-let student="";
-let score=0;
-let index=0;
+/* ---------- 12 ВАРИАНТОВ ---------- */
+
+let variants = {
+
+1: generateVariant("Уголь",3,8),
+2: generateVariant("Уголь",3,6),
+
+3: generateVariant("Железная руда",7,20),
+4: generateVariant("Железная руда",7,70),
+
+5: generateVariant("Медь",8,65),
+6: generateVariant("Медь",8,25),
+
+7: generateVariant("Золото",9,0,"сложная"),
+
+8: generateVariant("Бокситы",4,8),
+
+9: generateVariant("Фосфориты",1.5,3),
+
+10: generateVariant("Хром",10,75),
+
+11: generateVariant("Марганец",4,20),
+
+12: generateVariant("Известняк",1.5,4)
+
+};
+
+/* ---------- ГЕНЕРАЦИЯ ВАРИАНТА ---------- */
+
+function generateVariant(name,f,angle,typeOverride){
+
+let type = "";
+
+if(typeOverride){
+type = typeOverride;
+}
+else if(angle<=10) type="пологая";
+else if(angle<=30) type="наклонная";
+else if(angle<=55) type="крутонаклонная";
+else type="крутая";
+
+let strength = "";
+
+if(f<=2) strength="мягкие";
+else if(f<=5) strength="полускальные";
+else strength="скальные";
+
+return shuffleAnswersList([
+
+{
+q:`${name} имеет коэффициент крепости f = ${f}. Определите тип породы.`,
+a:["мягкие породы","полускальные породы","скальные породы","сыпучие породы"],
+correct: strength=="мягкие"?0:strength=="полускальные"?1:2
+},
+
+{
+q:`${name} имеет угол падения ${angle}°. Определите тип залежи.`,
+a:["пологая залежь","наклонная залежь","крутонаклонная залежь","крутая залежь"],
+correct: type=="пологая"?0:type=="наклонная"?1:type=="крутонаклонная"?2:3
+},
+
+{
+q:`Основным объектом разработки при добыче ${name} является:`,
+a:["залежь полезного ископаемого","вскрышная толща пород","рабочий уступ карьера","транспортная площадка"],
+correct:0
+},
+
+{
+q:`Коэффициент вскрыши при разработке ${name} определяется как:`,
+a:[
+"отношение объема вскрышных пород к объему полезного ископаемого",
+"отношение объема полезного ископаемого к объему вскрышных пород",
+"отношение глубины карьера к длине карьера",
+"отношение ширины карьера к глубине карьера"
+],
+correct:0
+},
+
+{
+q:`Подготовительный период разработки месторождения ${name} включает:`,
+a:[
+"подготовку месторождения к разработке",
+"выполнение добычных работ",
+"выполнение рекультивации",
+"выполнение ликвидации"
+],
+correct:0
+},
+
+{
+q:`Эксплуатационный период разработки ${name} включает:`,
+a:[
+"вскрышные и добычные работы",
+"подготовительные работы",
+"ликвидационные работы",
+"рекультивационные работы"
+],
+correct:0
+},
+
+{
+q:`Траншея при разработке ${name} предназначена для:`,
+a:[
+"вскрытия месторождения",
+"складирования пород",
+"размещения оборудования",
+"размещения транспорта"
+],
+correct:0
+},
+
+{
+q:`Уступ при разработке ${name} представляет собой:`,
+a:[
+"ступенчатую часть массива",
+"часть отвала пород",
+"часть транспортной площадки",
+"часть поверхности месторождения"
+],
+correct:0
+},
+
+{
+q:`Транспорт при разработке ${name} предназначен для:`,
+a:[
+"перемещения горной массы",
+"разрушения горных пород",
+"подготовки уступов",
+"бурения скважин"
+],
+correct:0
+},
+
+{
+q:`Кондиции при разработке ${name}, устанавливаемые при проектировании, называются:`,
+a:[
+"проектные кондиции",
+"геологические кондиции",
+"эксплуатационные кондиции",
+"временные кондиции"
+],
+correct:0
+}
+
+]);
+
+}
+
+/* ---------- ПЕРЕМЕШИВАНИЕ ---------- */
+
+function shuffle(array){
+return [...array].sort(()=>Math.random()-0.5);
+}
+
+function shuffleAnswersList(list){
+return list.map(q=>shuffleAnswers(q));
+}
+
+function shuffleAnswers(q){
+
+let correctAnswer = q.a[q.correct];
+let shuffled = shuffle(q.a);
+let newCorrect = shuffled.indexOf(correctAnswer);
+
+return {q:q.q,a:shuffled,correct:newCorrect};
+
+}
+
+/* ---------- ПЕРЕМЕННЫЕ ---------- */
+
 let questions=[];
+let index=0;
+let score=0;
+let variant=0;
+let student="";
+let startTime;
 
-function rand(min,max){
-return Math.floor(Math.random()*(max-min+1))+min;
-}
-
-function generateQuestionBank(){
-
-return [
-
-function(){
-let f=rand(1,20);
-let correct;
-
-if(f<=4) correct=0;
-else if(f<=10) correct=1;
-else if(f<=16) correct=2;
-else correct=3;
-
-return{
-q:`Коэффициент крепости пород f = ${f}. Определите категорию пород и необходимость буровзрывной подготовки.`,
-a:[
-"Мягкие породы, буровзрывные работы не требуются",
-"Породы средней крепости, возможна частичная буровзрывная подготовка",
-"Крепкие породы, требуется буровзрывная подготовка",
-"Очень крепкие породы, обязательны интенсивные буровзрывные работы"
-],
-correct:correct
-};
-},
-
-function(){
-let k=rand(2,12);
-
-return{
-q:`Коэффициент вскрыши составляет ${k} м³/м³. Как это влияет на экономическую эффективность разработки?`,
-a:[
-"Эффективность повышается",
-"Эффективность не изменяется",
-"Эффективность снижается",
-"Эффективность зависит только от транспорта"
-],
-correct: k>6 ? 2 : 0
-};
-},
-
-function(){
-let angle=rand(1,80);
-
-let correct;
-
-if(angle<=5) correct=0;
-else if(angle<=25) correct=1;
-else if(angle<=55) correct=2;
-else correct=3;
-
-return{
-q:`Угол падения залежи составляет ${angle}°. Определите тип залежи.`,
-a:[
-"Горизонтальная",
-"Пологая",
-"Наклонная",
-"Крутая"
-],
-correct:correct
-};
-},
-
-function(){
-return{
-q:`Строительство капитальных траншей и создание доступа к залежи относится к какому этапу разработки месторождения?`,
-a:[
-"Подготовительный этап",
-"Этап вскрытия месторождения",
-"Этап добычи",
-"Этап рекультивации"
-],
-correct:1
-};
-},
-
-function(){
-return{
-q:`Удаление пустых пород, покрывающих полезное ископаемое, относится к:`,
-a:[
-"Добычным работам",
-"Вскрышным работам",
-"Подготовительным работам",
-"Транспортным работам"
-],
-correct:1
-};
-},
-
-function(){
-return{
-q:`Выемка полезного ископаемого и погрузка в транспорт относится к:`,
-a:[
-"Вскрышным работам",
-"Добычным работам",
-"Подготовительным работам",
-"Разведочным работам"
-],
-correct:1
-};
-},
-
-function(){
-let d=rand(1,15);
-
-let correct;
-
-if(d<=3) correct=0;
-else if(d<=8) correct=1;
-else correct=2;
-
-return{
-q:`Расстояние транспортирования горной массы составляет ${d} км. Какой транспорт наиболее рационален?`,
-a:[
-"Автомобильный транспорт",
-"Конвейерный транспорт",
-"Железнодорожный транспорт",
-"Любой транспорт одинаково эффективен"
-],
-correct:correct
-};
-},
-
-function(){
-return{
-q:`Какие кондиции определяют качество и количество запасов полезного ископаемого на основе геологических данных?`,
-a:[
-"Геологические кондиции",
-"Эксплуатационные кондиции",
-"Проектные кондиции",
-"Технические кондиции"
-],
-correct:0
-};
-},
-
-function(){
-return{
-q:`Почему открытый способ разработки обеспечивает более высокую производительность по сравнению с подземным способом?`,
-a:[
-"Из-за отсутствия транспорта",
-"Из-за возможности применения высокопроизводительной техники",
-"Из-за отсутствия вскрышных работ",
-"Из-за меньшей глубины"
-],
-correct:1
-};
-},
-
-function(){
-return{
-q:`Что является основным недостатком открытого способа разработки месторождений?`,
-a:[
-"Высокая производительность",
-"Большой объем вскрышных работ",
-"Высокая механизация",
-"Низкая себестоимость"
-],
-correct:1
-};
-},
-
-function(){
-return{
-q:`Первый этап разработки месторождения называется:`,
-a:[
-"Подготовительный этап",
-"Вскрытие",
-"Добыча",
-"Рекультивация"
-],
-correct:0
-};
-},
-
-function(){
-return{
-q:`Уступ в карьере — это:`,
-a:[
-"Вертикальная выработка",
-"Горизонтальная рабочая площадка",
-"Транспортная выработка",
-"Разведочная выработка"
-],
-correct:1
-};
-}
-
-];
-
-}
+/* ---------- НАЧАЛО ---------- */
 
 function startTest(){
 
@@ -282,51 +274,39 @@ alert("Введите ФИО");
 return;
 }
 
-let bank=generateQuestionBank();
+variant=Math.floor(Math.random()*12)+1;
 
-let used=[];
+questions=variants[variant];
 
-while(questions.length<10){
-let i=rand(0,bank.length-1);
-if(!used.includes(i)){
-questions.push(bank[i]());
-used.push(i);
-}
-}
+startTime=new Date();
+
+document.getElementById("variant").innerHTML="<b>Ваш вариант: "+variant+"</b>";
+
+index=0;
+score=0;
 
 showQuestion();
 
 }
 
+/* ---------- ВОПРОС ---------- */
+
 function showQuestion(){
 
 if(index>=questions.length){
-
-document.getElementById("quiz").innerHTML=
-`<div class="card">
-<h2>Тест завершен</h2>
-<p>${student}</p>
-<p><b>Баллы: ${score}/100</b></p>
-</div>`;
-
+finishTest();
 return;
 }
 
 let q=questions[index];
 
-let html=
-`<div class="card">
+let html="<div class='card'>"+
+"<div class='score'>Баллы: "+score+"/100</div>"+
+"<h3>Вопрос "+(index+1)+" из 10</h3>"+
+"<p>"+q.q+"</p>";
 
-<div class="score">
-Баллы: ${score}/100
-</div>
-
-<h3>Вопрос ${index+1} из 10</h3>
-
-<p>${q.q}</p>`;
-
-q.a.forEach((ans,i)=>{
-html+=`<button onclick="answer(${i})">${ans}</button>`;
+q.a.forEach((a,i)=>{
+html+="<button onclick='answer("+i+")'>"+a+"</button>";
 });
 
 html+="</div>";
@@ -335,17 +315,70 @@ document.getElementById("quiz").innerHTML=html;
 
 }
 
+/* ---------- ОТВЕТ ---------- */
+
 function answer(i){
 
-if(i==questions[index].correct){
-
-score+=10;
-
-}
+if(i==questions[index].correct) score+=10;
 
 index++;
 
 showQuestion();
+
+}
+
+/* ---------- ЗАВЕРШЕНИЕ ---------- */
+
+function finishTest(){
+
+let end=new Date();
+
+let result={
+name:student,
+variant:variant,
+score:score,
+date:end.toLocaleString(),
+time:Math.round((end-startTime)/1000)
+};
+
+saveResult(result);
+
+document.getElementById("quiz").innerHTML=
+"<div class='card'>"+
+"<h2>Тест завершен</h2>"+
+"<p>ФИО: "+result.name+"</p>"+
+"<p>Вариант: "+result.variant+"</p>"+
+"<p>Баллы: "+result.score+"/100</p>"+
+"<p>Время: "+result.time+" сек</p>"+
+"</div>";
+
+}
+
+/* ---------- ЖУРНАЛ ---------- */
+
+function saveResult(r){
+
+let journal=JSON.parse(localStorage.getItem("journal"))||[];
+
+journal.push(r);
+
+localStorage.setItem("journal",JSON.stringify(journal));
+
+}
+
+function showJournal(){
+
+let journal=JSON.parse(localStorage.getItem("journal"))||[];
+
+let html="<div class='card'><h2>Журнал результатов</h2>";
+
+journal.forEach((r,i)=>{
+html+="<p>"+(i+1)+". "+r.name+" | вариант "+r.variant+" | "+r.score+" баллов | "+r.date+"</p>";
+});
+
+html+="</div>";
+
+document.getElementById("quiz").innerHTML=html;
 
 }
 
